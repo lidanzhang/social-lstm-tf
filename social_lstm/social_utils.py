@@ -9,7 +9,7 @@ Date : 17th October 2016
 import os
 import pickle
 import numpy as np
-import ipdb
+#import ipdb
 import random
 
 # The data loader class that loads data from the datasets considering
@@ -26,9 +26,9 @@ class SocialDataLoader():
         forcePreProcess : Flag to forcefully preprocess the data again from csv files
         '''
         # List of data directories where raw data resides
-        self.data_dirs = ['../data/eth/univ', '../data/eth/hotel',
-                          '../data/ucy/zara/zara01', '../data/ucy/zara/zara02',
-                          '../data/ucy/univ']
+        self.data_dirs = ['./data/eth/univ', './data/eth/hotel',
+                          './data/ucy/zara/zara01', './data/ucy/zara/zara02',
+                          './data/ucy/univ']
         # self.data_dirs = ['./data/eth/univ', './data/eth/hotel']
 
         self.used_data_dirs = [self.data_dirs[x] for x in datasets]
@@ -38,7 +38,7 @@ class SocialDataLoader():
         self.numDatasets = len(self.data_dirs)
 
         # Data directory where the pre-processed pickle file resides
-        self.data_dir = '../data'
+        self.data_dir = './data'
 
         # Maximum number of peds in a single frame (Number obtained by checking the datasets)
         self.maxNumPeds = maxNumPeds

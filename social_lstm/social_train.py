@@ -37,7 +37,7 @@ def main():
     parser.add_argument('--seq_length', type=int, default=12,
                         help='RNN sequence length')
     # Number of epochs parameter
-    parser.add_argument('--num_epochs', type=int, default=3,
+    parser.add_argument('--num_epochs', type=int, default=2,
                         help='number of epochs')
     # Frequency at which the model should be saved parameter
     parser.add_argument('--save_every', type=int, default=400,
@@ -50,7 +50,7 @@ def main():
     parser.add_argument('--learning_rate', type=float, default=0.005,
                         help='learning rate')
     # Decay rate for the learning rate parameter
-    parser.add_argument('--decay_rate', type=float, default=0.95,
+    parser.add_argument('--decay_rate', type=float, default=1.0,#0.95,
                         help='decay rate for rmsprop')
     # Dropout not implemented.
     # Dropout probability parameter
@@ -104,6 +104,8 @@ def train(args):
     with open(os.path.join(save_directory, 'social_config.pkl'), 'wb') as f:
         pickle.dump(args, f)
 
+    tf.reset_default_graph()
+
     # Create a SocialModel object with the arguments
     model = SocialModel(args)
 
@@ -112,13 +114,13 @@ def train(args):
     # Initialize a TensorFlow session
     with tf.Session() as sess:
         # Initialize all variables in the graph
-        sess.run(tf.global_variables_initializer())
         # Initialize a saver that saves all the variables in the graph
-        saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
-
+#        saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
+        summary_merge_op = tf.summary.merge_all()
+        saver = tf.train.Saver()
+        sess.run(tf.global_variables_initializer())
         train_writer = tf.summary.FileWriter(log_directory + 'train')
         train_writer.add_graph(sess.graph)
-
 
         print 'Training begin'
         best_val_loss = 100
@@ -165,7 +167,10 @@ def train(args):
                     # Feed the source, target data
                     feed = {model.input_data: x_batch, model.target_data: y_batch, model.grid_data: grid_batch}
 
-                    train_loss, _ = sess.run([model.cost, model.train_op], feed)
+                    train_loss, _ , summary= sess.run([model.cost, model.train_op, summary_merge_op], feed)
+                    step = e*data_loader.num_batches*data_loader.batch_size + b * data_loader.batch_size + batch
+                    train_writer.add_summary(summary, step)
+                    train_writer.flush()
 
                     loss_batch += train_loss
 
@@ -179,7 +184,6 @@ def train(args):
                         args.num_epochs * data_loader.num_batches,
                         e,
                         loss_batch, end - start))
-
                 # Save the model if the current epoch and batch number match the frequency
                 '''
                 if (e * data_loader.num_batches + b) % args.save_every == 0 and ((e * data_loader.num_batches + b) > 0):

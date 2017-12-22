@@ -192,6 +192,8 @@ class SocialModel():
         l2 = args.lambda_param*sum(tf.nn.l2_loss(tvar) for tvar in tvars)
         self.cost = self.cost + l2
 
+        tf.summary.scalar("cost", l2)
+
         # Get the final LSTM states
         self.final_states = tf.concat(self.initial_states, 0)
 
@@ -206,6 +208,7 @@ class SocialModel():
 
         # Define the optimizer
         optimizer = tf.train.RMSPropOptimizer(self.lr)
+        tf.summary.scalar("learning_rate", self.lr)
 
         # The train operator
         self.train_op = optimizer.apply_gradients(zip(grads, tvars))
@@ -218,16 +221,22 @@ class SocialModel():
         with tf.variable_scope("coordinate_embedding"):
             self.embedding_w = tf.get_variable("embedding_w", [2, args.embedding_size], initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.embedding_b = tf.get_variable("embedding_b", [args.embedding_size], initializer=tf.constant_initializer(0.1))
+            tf.summary.histogram("coordinate_w", self.embedding_w)
+            tf.summary.histogram("coordinate_b", self.embedding_b)
 
         # Define variables for the social tensor embedding layer
         with tf.variable_scope("tensor_embedding"):
             self.embedding_t_w = tf.get_variable("embedding_t_w", [args.grid_size*args.grid_size*args.rnn_size, args.embedding_size], initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.embedding_t_b = tf.get_variable("embedding_t_b", [args.embedding_size], initializer=tf.constant_initializer(0.1))
+            tf.summary.histogram("social_w", self.embedding_t_w)
+            tf.summary.histogram("social_b", self.embedding_t_b)
 
         # Define variables for the output linear layer
         with tf.variable_scope("output_layer"):
             self.output_w = tf.get_variable("output_w", [args.rnn_size, self.output_size], initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.output_b = tf.get_variable("output_b", [self.output_size], initializer=tf.constant_initializer(0.1))
+            tf.summary.histogram("output_w", self.output_w)
+            tf.summary.histogram("output_b", self.output_b)
 
     def tf_2d_normal(self, x, y, mux, muy, sx, sy, rho):
         '''

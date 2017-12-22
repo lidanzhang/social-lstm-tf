@@ -1,14 +1,21 @@
 import tensorflow as tf
 import argparse
-import os
+import os,errno
 import time
 import pickle
-import ipdb
+#import ipdb
 
 from social_model import SocialModel
 from social_utils import SocialDataLoader
 from grid import getSequenceGridMask
 
+
+def safe_mkdir(directory):
+    try:
+        os.makedirs(directory)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
 def main():
     parser = argparse.ArgumentParser()
@@ -30,7 +37,7 @@ def main():
     parser.add_argument('--seq_length', type=int, default=12,
                         help='RNN sequence length')
     # Number of epochs parameter
-    parser.add_argument('--num_epochs', type=int, default=50,
+    parser.add_argument('--num_epochs', type=int, default=3,
                         help='number of epochs')
     # Frequency at which the model should be saved parameter
     parser.add_argument('--save_every', type=int, default=400,
@@ -83,6 +90,7 @@ def train(args):
     # Log directory
     log_directory = 'log/'
     log_directory += str(args.leaveDataset) + '/'
+    safe_mkdir(log_directory)
 
     # Logging files
     log_file_curve = open(os.path.join(log_directory, 'log_curve.txt'), 'w')
@@ -91,6 +99,7 @@ def train(args):
     # Save directory
     save_directory = 'save/'
     save_directory += str(args.leaveDataset) + '/'
+    safe_mkdir(save_directory)
 
     with open(os.path.join(save_directory, 'social_config.pkl'), 'wb') as f:
         pickle.dump(args, f)
@@ -103,14 +112,18 @@ def train(args):
     # Initialize a TensorFlow session
     with tf.Session() as sess:
         # Initialize all variables in the graph
-        sess.run(tf.initialize_all_variables())
+        sess.run(tf.global_variables_initializer())
         # Initialize a saver that saves all the variables in the graph
-        saver = tf.train.Saver(tf.all_variables(), max_to_keep=None)
+        saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
 
-        # summary_writer = tf.train.SummaryWriter('/tmp/lstm/logs', graph_def=sess.graph_def)
+        train_writer = tf.summary.FileWriter(log_directory + 'train')
+        train_writer.add_graph(sess.graph)
+
+
         print 'Training begin'
         best_val_loss = 100
         best_epoch = 0
+
 
         # For each epoch
         for e in range(args.num_epochs):
@@ -241,6 +254,7 @@ def train(args):
         # CLose logging files
         log_file.close()
         log_file_curve.close()
+        train_writer.close()
 
 
 if __name__ == '__main__':

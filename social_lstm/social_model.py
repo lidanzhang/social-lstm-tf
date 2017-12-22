@@ -193,7 +193,7 @@ class SocialModel():
         self.cost = self.cost + l2
 
         # Get the final LSTM states
-        self.final_states = tf.concat(0, self.initial_states)
+        self.final_states = tf.concat(self.initial_states, 0)
 
         # Get the final distribution parameters
         self.final_output = self.initial_output
